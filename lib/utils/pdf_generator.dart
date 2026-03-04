@@ -52,11 +52,11 @@ class PdfGenerator {
                       if (shopAddress.isNotEmpty)
                         pw.Text(shopAddress,
                             style: pw.TextStyle(
-                                color: PdfColors.white70, fontSize: 10)),
+                                color: PdfColor.fromHex('#B3FFFFFF'), fontSize: 10)),
                       if (shopPhone.isNotEmpty)
                         pw.Text(shopPhone,
                             style: pw.TextStyle(
-                                color: PdfColors.white70, fontSize: 10)),
+                                color: PdfColor.fromHex('#B3FFFFFF'), fontSize: 10)),
                     ],
                   ),
                   pw.Column(
@@ -69,7 +69,7 @@ class PdfGenerator {
                               fontWeight: pw.FontWeight.bold)),
                       pw.Text(invoice.invoiceNumber,
                           style: pw.TextStyle(
-                              color: PdfColors.white70, fontSize: 12)),
+                              color: PdfColor.fromHex('#B3FFFFFF'), fontSize: 12)),
                     ],
                   ),
                 ],
