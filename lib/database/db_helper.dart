@@ -481,7 +481,6 @@ class DBHelper {
     final db = await database;
     await db.delete('utility_bills', where: 'id = ?', whereArgs: [id]);
   }
-}
 
   // Raw map inserts used by BackupManager restore
   Future<void> insertProductMap(Map<String, dynamic> map) async {
