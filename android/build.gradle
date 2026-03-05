@@ -15,11 +15,6 @@ allprojects {
         google()
         mavenCentral()
     }
-    configurations.all {
-        resolutionStrategy {
-            force 'com.google.android.material:material:1.4.0'
-        }
-    }
 }
 
 rootProject.buildDir = '../build'

@@ -8,6 +8,12 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
+      - name: Fix printing plugin compileSdk
+        script: |
+          find ~/.pub-cache -path "*/printing-*/android/build.gradle" | while read f; do
+            sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/g' "$f"
+            sed -i 's/compileSdk [0-9]*/compileSdk 34/g' "$f"
+          done
       - name: Build APK
         script: flutter build apk --release
     artifacts:
