@@ -123,6 +123,25 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     }
   }
 
+  Future<void> _printReceipt() async {
+    setState(() => _generating = true);
+    try {
+      await PdfGenerator.printReceipt(
+        widget.invoice,
+        shopName: _settings['shopName'] ?? 'My Shop',
+        shopAddress: _settings['shopAddress'] ?? '',
+        shopPhone: _settings['shopPhone'] ?? '',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
   Color get _statusColor {
     switch (widget.invoice.status) {
       case InvoiceStatus.paid:
@@ -148,9 +167,19 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.receipt_long_rounded),
+            onPressed: _generating ? null : _printReceipt,
+            tooltip: 'Print Receipt',
+          ),
+          IconButton(
+            icon: _generating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.print_rounded),
             onPressed: _generating ? null : _print,
-            tooltip: 'Print',
+            tooltip: 'Print A4',
           ),
           IconButton(
             icon: _generating

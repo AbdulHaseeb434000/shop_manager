@@ -433,4 +433,218 @@ class PdfGenerator {
           'Invoice ${invoice.invoiceNumber}\nAmount: ${CurrencyFormat.format(invoice.totalAmount)}',
     );
   }
+
+  static Future<File> generateReceipt(
+    Invoice invoice, {
+    required String shopName,
+    required String shopAddress,
+    required String shopPhone,
+  }) async {
+    const double paperWidth = 80 * PdfPageFormat.mm;
+    const String dash = '--------------------------------';
+
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat(paperWidth, double.infinity,
+            marginAll: 8 * PdfPageFormat.mm),
+        build: (context) {
+          final items = invoice.items;
+          final hasDiscountOrTax =
+              invoice.discountAmount > 0 || invoice.taxAmount > 0;
+
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              // Shop name
+              pw.Center(
+                child: pw.Text(
+                  shopName,
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ),
+              if (shopAddress.isNotEmpty)
+                pw.Center(
+                  child: pw.Text(shopAddress,
+                      style: const pw.TextStyle(fontSize: 9),
+                      textAlign: pw.TextAlign.center),
+                ),
+              if (shopPhone.isNotEmpty)
+                pw.Center(
+                  child: pw.Text(shopPhone,
+                      style: const pw.TextStyle(fontSize: 9),
+                      textAlign: pw.TextAlign.center),
+                ),
+              pw.SizedBox(height: 4),
+              pw.Text(dash, style: const pw.TextStyle(fontSize: 9)),
+              pw.SizedBox(height: 3),
+
+              // Invoice info
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Invoice: ${invoice.invoiceNumber}',
+                      style: const pw.TextStyle(fontSize: 9)),
+                  pw.Text(DateFormat2.format(invoice.createdAt),
+                      style: const pw.TextStyle(fontSize: 9)),
+                ],
+              ),
+              if (invoice.customerName != null &&
+                  invoice.customerName!.isNotEmpty)
+                pw.Text('Customer: ${invoice.customerName}',
+                    style: const pw.TextStyle(fontSize: 9)),
+              pw.SizedBox(height: 3),
+              pw.Text(dash, style: const pw.TextStyle(fontSize: 9)),
+              pw.SizedBox(height: 3),
+
+              // Column headers
+              pw.Row(
+                children: [
+                  pw.Expanded(
+                      flex: 4,
+                      child: pw.Text('Item',
+                          style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold))),
+                  pw.Expanded(
+                      flex: 2,
+                      child: pw.Text('Qty',
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold))),
+                  pw.Expanded(
+                      flex: 3,
+                      child: pw.Text('Price',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold))),
+                  pw.Expanded(
+                      flex: 3,
+                      child: pw.Text('Total',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold))),
+                ],
+              ),
+              pw.SizedBox(height: 2),
+
+              // Item rows
+              ...items.map((item) => pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(vertical: 1),
+                    child: pw.Row(
+                      children: [
+                        pw.Expanded(
+                            flex: 4,
+                            child: pw.Text(item.productName,
+                                style: const pw.TextStyle(fontSize: 9))),
+                        pw.Expanded(
+                            flex: 2,
+                            child: pw.Text(
+                                '${item.quantity} ${item.unit}',
+                                textAlign: pw.TextAlign.center,
+                                style: const pw.TextStyle(fontSize: 9))),
+                        pw.Expanded(
+                            flex: 3,
+                            child: pw.Text(
+                                CurrencyFormat.format(item.price),
+                                textAlign: pw.TextAlign.right,
+                                style: const pw.TextStyle(fontSize: 9))),
+                        pw.Expanded(
+                            flex: 3,
+                            child: pw.Text(
+                                CurrencyFormat.format(item.total),
+                                textAlign: pw.TextAlign.right,
+                                style: const pw.TextStyle(fontSize: 9))),
+                      ],
+                    ),
+                  )),
+
+              pw.SizedBox(height: 3),
+              pw.Text(dash, style: const pw.TextStyle(fontSize: 9)),
+              pw.SizedBox(height: 3),
+
+              // Totals
+              if (hasDiscountOrTax)
+                _buildReceiptRow(
+                    'Subtotal', CurrencyFormat.format(invoice.subtotal)),
+              if (invoice.discountAmount > 0)
+                _buildReceiptRow('Discount',
+                    '- ${CurrencyFormat.format(invoice.discountAmount)}'),
+              if (invoice.taxAmount > 0)
+                _buildReceiptRow(
+                    'Tax (${invoice.taxPercent}%)',
+                    CurrencyFormat.format(invoice.taxAmount)),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL',
+                      style: pw.TextStyle(
+                          fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(CurrencyFormat.format(invoice.totalAmount),
+                      style: pw.TextStyle(
+                          fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              if (invoice.dueAmount > 0) ...[
+                _buildReceiptRow(
+                    'Paid', CurrencyFormat.format(invoice.paidAmount)),
+                _buildReceiptRow(
+                    'Due', CurrencyFormat.format(invoice.dueAmount)),
+              ],
+              pw.SizedBox(height: 3),
+              _buildReceiptRow('Payment',
+                  invoice.paymentMethod.name.toUpperCase()),
+              pw.SizedBox(height: 3),
+              pw.Text(dash, style: const pw.TextStyle(fontSize: 9)),
+              pw.SizedBox(height: 4),
+              pw.Center(
+                child: pw.Text('Thank you!',
+                    style: pw.TextStyle(
+                        fontSize: 11, fontWeight: pw.FontWeight.bold),
+                    textAlign: pw.TextAlign.center),
+              ),
+              pw.SizedBox(height: 8),
+            ],
+          );
+        },
+      ),
+    );
+
+    final dir = await getApplicationDocumentsDirectory();
+    final file =
+        File('${dir.path}/receipt_${invoice.invoiceNumber}.pdf');
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  static pw.Widget _buildReceiptRow(String label, String value) =>
+      pw.Padding(
+        padding: const pw.EdgeInsets.symmetric(vertical: 1),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(label, style: const pw.TextStyle(fontSize: 9)),
+            pw.Text(value,
+                style: pw.TextStyle(
+                    fontSize: 9, fontWeight: pw.FontWeight.bold)),
+          ],
+        ),
+      );
+
+  static Future<void> printReceipt(Invoice invoice,
+      {required String shopName,
+      required String shopAddress,
+      required String shopPhone}) async {
+    final file = await generateReceipt(invoice,
+        shopName: shopName,
+        shopAddress: shopAddress,
+        shopPhone: shopPhone);
+    await Printing.layoutPdf(onLayout: (_) => file.readAsBytes());
+  }
 }
