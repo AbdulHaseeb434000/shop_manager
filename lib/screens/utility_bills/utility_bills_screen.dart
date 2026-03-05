@@ -15,44 +15,26 @@ class UtilityBillsScreen extends StatefulWidget {
   State<UtilityBillsScreen> createState() => _UtilityBillsScreenState();
 }
 
-class _UtilityBillsScreenState extends State<UtilityBillsScreen>
-    with SingleTickerProviderStateMixin {
+class _UtilityBillsScreenState extends State<UtilityBillsScreen> {
   final _db = DBHelper();
   List<UtilityBill> _bills = [];
   bool _loading = true;
-  late TabController _tabCtrl;
-  final List<BillStatus?> _filters = [null, BillStatus.pending, BillStatus.paid, BillStatus.overdue];
 
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 4, vsync: this);
-    _tabCtrl.addListener(() => _loadData());
     _loadData();
   }
 
-  @override
-  void dispose() {
-    _tabCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadData() async {
-    final status = _filters[_tabCtrl.index];
-    List<UtilityBill> bills = await _db.getUtilityBills(status: status);
-    // For overdue tab, filter manually since DB doesn't store derived status
-    if (status == BillStatus.overdue) {
-      bills = (await _db.getUtilityBills()).where((b) => b.isOverdue).toList();
-    }
+    final bills = await _db.getUtilityBills();
     if (mounted) setState(() {
       _bills = bills;
       _loading = false;
     });
   }
 
-  double get _totalPending => _bills
-      .where((b) => b.status != BillStatus.paid)
-      .fold(0, (s, b) => s + b.amount);
+  double get _totalExpenses => _bills.fold(0, (s, b) => s + b.amount);
 
   static const Map<UtilityType, IconData> _typeIcons = {
     UtilityType.electricity: Icons.electric_bolt_rounded,
@@ -74,77 +56,34 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
     UtilityType.other: Color(0xFF9093A4),
   };
 
-  Future<void> _markPaid(UtilityBill bill) async {
-    final receiptCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Mark as Paid'),
-        content: TextField(
-          controller: receiptCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Receipt Number (optional)',
-            prefixIcon: Icon(Icons.receipt_rounded),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirm')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await _db.updateUtilityBill(bill.copyWith(
-        status: BillStatus.paid,
-        paidDate: DateTime.now(),
-        receiptNumber: receiptCtrl.text.trim().isEmpty ? null : receiptCtrl.text.trim(),
-      ));
-      _loadData();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
         title: const Text('Expenses'),
-        bottom: TabBar(
-          controller: _tabCtrl,
-          labelStyle: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
-          indicatorColor: AppTheme.primary,
-          labelColor: AppTheme.primary,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Pending'),
-            Tab(text: 'Paid'),
-            Tab(text: 'Overdue'),
-          ],
-        ),
       ),
       body: Column(
         children: [
-          if (_totalPending > 0 && _tabCtrl.index == 0)
+          if (_bills.isNotEmpty)
             Container(
               margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: AppTheme.gradientWarning),
+                gradient: const LinearGradient(colors: AppTheme.gradientPrimary),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.white),
+                  const Icon(Icons.receipt_long_rounded, color: Colors.white),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Pending',
+                      Text('Total Expenses',
                           style: GoogleFonts.poppins(
                               color: Colors.white70, fontSize: 11)),
-                      Text(CurrencyFormat.format(_totalPending),
+                      Text(CurrencyFormat.format(_totalExpenses),
                           style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -178,22 +117,11 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                         itemBuilder: (ctx, i) {
                           final b = _bills[i];
                           final color = _typeColors[b.type] ?? AppTheme.primary;
-                          final isOverdue = b.isOverdue;
 
                           return Slidable(
                             endActionPane: ActionPane(
                               motion: const DrawerMotion(),
                               children: [
-                                if (b.status != BillStatus.paid)
-                                  SlidableAction(
-                                    onPressed: (_) => _markPaid(b),
-                                    backgroundColor: AppTheme.success,
-                                    foregroundColor: Colors.white,
-                                    icon: Icons.check_circle_rounded,
-                                    label: 'Paid',
-                                    borderRadius: const BorderRadius.horizontal(
-                                        left: Radius.circular(12)),
-                                  ),
                                 SlidableAction(
                                   onPressed: (_) async {
                                     await Navigator.push(
@@ -207,6 +135,8 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                                   foregroundColor: Colors.white,
                                   icon: Icons.edit_rounded,
                                   label: 'Edit',
+                                  borderRadius: const BorderRadius.horizontal(
+                                      left: Radius.circular(12)),
                                 ),
                                 SlidableAction(
                                   onPressed: (_) async {
@@ -227,11 +157,7 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                               decoration: BoxDecoration(
                                 color: AppTheme.bgCard,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isOverdue
-                                      ? AppTheme.error.withOpacity(0.3)
-                                      : AppTheme.divider,
-                                ),
+                                border: Border.all(color: AppTheme.divider),
                               ),
                               child: Row(
                                 children: [
@@ -256,12 +182,10 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13)),
                                         Text(
-                                          'Due: ${DateFormat2.format(b.dueDate)}',
+                                          'Date: ${DateFormat2.format(b.billDate)}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 11,
-                                            color: isOverdue
-                                                ? AppTheme.error
-                                                : AppTheme.textSecondary,
+                                            color: AppTheme.textSecondary,
                                           ),
                                         ),
                                         if (b.receiptNumber != null)
@@ -272,33 +196,11 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                                       ],
                                     ),
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        CurrencyFormat.format(b.amount),
-                                        style: GoogleFonts.poppins(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      StatusChip(
-                                        label: isOverdue
-                                            ? 'OVERDUE'
-                                            : b.status.name.toUpperCase(),
-                                        color: b.status == BillStatus.paid
-                                            ? AppTheme.success
-                                            : isOverdue
-                                                ? AppTheme.error
-                                                : AppTheme.warning,
-                                        bgColor: (b.status == BillStatus.paid
-                                                ? AppTheme.success
-                                                : isOverdue
-                                                    ? AppTheme.error
-                                                    : AppTheme.warning)
-                                            .withOpacity(0.1),
-                                      ),
-                                    ],
+                                  Text(
+                                    CurrencyFormat.format(b.amount),
+                                    style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14),
                                   ),
                                 ],
                               ),

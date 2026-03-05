@@ -23,8 +23,13 @@ class DBHelper {
     final path = join(dbPath, 'shop_manager.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: (db, oldV, newV) async {
+        if (oldV < 2) {
+          await db.execute('ALTER TABLE invoice_items ADD COLUMN buyPrice REAL DEFAULT 0');
+        }
+      },
       onConfigure: (db) async => await db.execute('PRAGMA foreign_keys = ON'),
     );
   }
@@ -103,6 +108,7 @@ class DBHelper {
         unit TEXT DEFAULT 'pcs',
         price REAL NOT NULL,
         discount REAL DEFAULT 0,
+        buyPrice REAL DEFAULT 0,
         FOREIGN KEY(invoiceId) REFERENCES invoices(id) ON DELETE CASCADE
       )
     ''');
@@ -299,13 +305,14 @@ class DBHelper {
     final invId = await db.insert('invoices', map);
 
     for (final item in inv.items) {
+      final product = await getProductById(item.productId);
       final itemMap = item.toMap()
         ..remove('id')
-        ..['invoiceId'] = invId;
+        ..['invoiceId'] = invId
+        ..['buyPrice'] = product?.buyPrice ?? 0.0;
       await db.insert('invoice_items', itemMap);
 
       // Reduce product stock
-      final product = await getProductById(item.productId);
       if (product != null) {
         await updateProductQuantity(
             item.productId, product.quantity - item.quantity);
@@ -383,9 +390,31 @@ class DBHelper {
 
   Future<void> updateInvoiceStatus(int id, InvoiceStatus status, double paid) async {
     final db = await database;
+    final inv = await getInvoiceById(id);
     await db.update('invoices',
         {'status': status.name, 'paidAmount': paid},
         where: 'id = ?', whereArgs: [id]);
+    if (inv?.customerId != null) {
+      final customer = await getCustomerById(inv!.customerId!);
+      if (customer != null) {
+        final oldDue = inv.totalAmount - inv.paidAmount;
+        final newDue = inv.totalAmount - paid;
+        final delta = newDue - oldDue;
+        await updateCustomer(customer.copyWith(
+          balance: (customer.balance + delta).clamp(0.0, double.infinity),
+        ));
+      }
+    }
+  }
+
+  Future<Invoice?> getInvoiceByNumber(String number) async {
+    final db = await database;
+    final maps = await db.query('invoices',
+        where: 'invoiceNumber = ?', whereArgs: [number]);
+    if (maps.isEmpty) return null;
+    final itemMaps = await db.query('invoice_items',
+        where: 'invoiceId = ?', whereArgs: [maps.first['id']]);
+    return Invoice.fromMap(maps.first, itemMaps.map(InvoiceItem.fromMap).toList());
   }
 
   // ==================== REPORTS ====================
@@ -516,23 +545,32 @@ class DBHelper {
         'SELECT COALESCE(SUM(totalAmount),0) as total FROM invoices WHERE createdAt >= ?',
         [from]);
     final expenses = await db.rawQuery(
-        'SELECT COALESCE(SUM(amount),0) as total FROM utility_bills WHERE status = ? AND paidDate >= ?',
-        ['paid', from]);
+        'SELECT COALESCE(SUM(amount),0) as total FROM utility_bills WHERE billDate >= ?',
+        [from]);
+    final cogs = await db.rawQuery('''
+      SELECT COALESCE(SUM(COALESCE(ii.buyPrice, 0) * ii.quantity), 0) as total
+      FROM invoice_items ii
+      JOIN invoices i ON ii.invoiceId = i.id
+      WHERE i.createdAt >= ?
+    ''', [from]);
     final invoiceCount = await db.rawQuery(
         'SELECT COUNT(*) as cnt FROM invoices WHERE createdAt >= ?', [from]);
     final unpaid = await db.rawQuery(
         'SELECT COALESCE(SUM(totalAmount - paidAmount),0) as total FROM invoices WHERE status != ? AND createdAt >= ?',
         ['paid', from]);
     final expenseByType = await db.rawQuery(
-        'SELECT type, COALESCE(SUM(amount),0) as total FROM utility_bills WHERE status = ? AND paidDate >= ? GROUP BY type ORDER BY total DESC',
-        ['paid', from]);
+        'SELECT type, COALESCE(SUM(amount),0) as total FROM utility_bills WHERE billDate >= ? GROUP BY type ORDER BY total DESC',
+        [from]);
 
     final rev = (revenue.first['total'] as num).toDouble();
     final exp = (expenses.first['total'] as num).toDouble();
+    final cogsVal = (cogs.first['total'] as num).toDouble();
     return {
       'revenue': rev,
+      'cogs': cogsVal,
+      'grossProfit': rev - cogsVal,
       'expenses': exp,
-      'profit': rev - exp,
+      'profit': rev - cogsVal - exp,
       'invoiceCount': invoiceCount.first['cnt'],
       'unpaidDue': (unpaid.first['total'] as num).toDouble(),
       'expenseByType': expenseByType,

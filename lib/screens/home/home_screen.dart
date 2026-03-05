@@ -133,8 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _stats['todaySales'] ?? 0),
                             icon: Icons.today_rounded,
                             gradient: AppTheme.gradientPrimary,
-                            onTap: () => Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const InvoicesScreen())),
+                            onTap: () async {
+                              await Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => const InvoicesScreen()));
+                              _loadData();
+                            },
                           ),
                           GradientStatCard(
                             title: 'This Month',
@@ -204,8 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             icon: Icons.receipt_long_rounded,
                             label: 'Invoices',
                             color: AppTheme.success,
-                            onTap: () => Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const InvoicesScreen())),
+                            onTap: () async {
+                              await Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => const InvoicesScreen()));
+                              _loadData();
+                            },
                           ),
                           _QuickAction(
                             icon: Icons.inventory_rounded,
@@ -349,8 +355,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: InkWell(
-        onTap: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const InvoicesScreen())),
+        onTap: () async {
+          await Navigator.push(
+              context, MaterialPageRoute(builder: (_) => const InvoicesScreen()));
+          _loadData();
+        },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(14),

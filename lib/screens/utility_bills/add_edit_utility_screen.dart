@@ -24,7 +24,6 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
   late final TextEditingController _notesCtrl;
   late final TextEditingController _receiptCtrl;
   late DateTime _billDate;
-  late DateTime _dueDate;
 
   static const Map<UtilityType, String> _typeLabels = {
     UtilityType.electricity: 'Electricity',
@@ -57,7 +56,6 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
     _notesCtrl = TextEditingController(text: b?.notes ?? '');
     _receiptCtrl = TextEditingController(text: b?.receiptNumber ?? '');
     _billDate = b?.billDate ?? DateTime.now();
-    _dueDate = b?.dueDate ?? DateTime.now().add(const Duration(days: 30));
   }
 
   @override
@@ -69,10 +67,10 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
     super.dispose();
   }
 
-  Future<void> _pickDate(bool isDue) async {
+  Future<void> _pickBillDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: isDue ? _dueDate : _billDate,
+      initialDate: _billDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       builder: (ctx, child) => Theme(
@@ -83,13 +81,7 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
       ),
     );
     if (date != null) {
-      setState(() {
-        if (isDue) {
-          _dueDate = date;
-        } else {
-          _billDate = date;
-        }
-      });
+      setState(() => _billDate = date);
     }
   }
 
@@ -101,9 +93,9 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
       title: _titleCtrl.text.trim(),
       amount: double.parse(_amountCtrl.text),
       billDate: _billDate,
-      dueDate: _dueDate,
-      paidDate: widget.bill?.paidDate,
-      status: widget.bill?.status ?? BillStatus.pending,
+      dueDate: _billDate,
+      paidDate: _billDate,
+      status: BillStatus.paid,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       receiptNumber: _receiptCtrl.text.trim().isEmpty ? null : _receiptCtrl.text.trim(),
     );
@@ -120,7 +112,7 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
-        title: Text(widget.bill == null ? 'Add Utility Bill' : 'Edit Bill'),
+        title: Text(widget.bill == null ? 'Add Expense' : 'Edit Expense'),
         actions: [
           TextButton(
             onPressed: _save,
@@ -146,7 +138,7 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bill Type',
+                  Text('Expense Type',
                       style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -222,7 +214,7 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Bill Details',
+                  Text('Expense Details',
                       style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -235,15 +227,19 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
                     style: GoogleFonts.poppins(
                         fontSize: 14, color: AppTheme.textPrimary),
                     decoration: const InputDecoration(
-                        labelText: 'Bill Title *',
+                        labelText: 'Title *',
                         prefixIcon: Icon(Icons.title_rounded)),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _amountCtrl,
                     keyboardType: TextInputType.number,
-                    validator: (v) =>
-                        double.tryParse(v ?? '') == null ? 'Invalid amount' : null,
+                    validator: (v) {
+                      final d = double.tryParse(v ?? '');
+                      if (d == null) return 'Invalid amount';
+                      if (d <= 0) return 'Amount must be greater than 0';
+                      return null;
+                    },
                     style: GoogleFonts.poppins(
                         fontSize: 14, color: AppTheme.textPrimary),
                     decoration: const InputDecoration(
@@ -251,9 +247,9 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
                         prefixIcon: Icon(Icons.payments_rounded)),
                   ),
                   const SizedBox(height: 12),
-                  // Bill date
+                  // Expense date
                   GestureDetector(
-                    onTap: () => _pickDate(false),
+                    onTap: _pickBillDate,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 14),
@@ -270,48 +266,12 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bill Date',
+                              Text('Expense Date',
                                   style: GoogleFonts.poppins(
                                       fontSize: 11,
                                       color: AppTheme.textSecondary)),
                               Text(
                                 DateFormat('dd MMM yyyy').format(_billDate),
-                                style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: AppTheme.textPrimary),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Due date
-                  GestureDetector(
-                    onTap: () => _pickDate(true),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.bgLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.divider),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.event_rounded,
-                              color: AppTheme.warning, size: 20),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Due Date',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: AppTheme.textSecondary)),
-                              Text(
-                                DateFormat('dd MMM yyyy').format(_dueDate),
                                 style: GoogleFonts.poppins(
                                     fontSize: 14,
                                     color: AppTheme.textPrimary),
@@ -349,7 +309,7 @@ class _AddEditUtilityScreenState extends State<AddEditUtilityScreen> {
             ElevatedButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.save_rounded),
-              label: Text(widget.bill == null ? 'Add Bill' : 'Save Changes'),
+              label: Text(widget.bill == null ? 'Add Expense' : 'Save Changes'),
               style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52)),
             ),

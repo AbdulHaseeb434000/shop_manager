@@ -140,17 +140,21 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   Expanded(
                     child: _field('Buy Price *', _buyPriceCtrl,
                         keyboardType: TextInputType.number,
-                        validator: (v) => double.tryParse(v ?? '') == null
-                            ? 'Invalid'
-                            : null),
+                        validator: (v) {
+                          final d = double.tryParse(v ?? '');
+                          if (d == null || d < 0) return 'Cannot be negative';
+                          return null;
+                        }),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _field('Sell Price *', _sellPriceCtrl,
                         keyboardType: TextInputType.number,
-                        validator: (v) => double.tryParse(v ?? '') == null
-                            ? 'Invalid'
-                            : null),
+                        validator: (v) {
+                          final d = double.tryParse(v ?? '');
+                          if (d == null || d <= 0) return 'Must be > 0';
+                          return null;
+                        }),
                   ),
                 ],
               ),
@@ -208,9 +212,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     flex: 2,
                     child: _field('Quantity *', _quantityCtrl,
                         keyboardType: TextInputType.number,
-                        validator: (v) => double.tryParse(v ?? '') == null
-                            ? 'Invalid'
-                            : null),
+                        validator: (v) {
+                          final d = double.tryParse(v ?? '');
+                          if (d == null || d < 0) return 'Cannot be negative';
+                          return null;
+                        }),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

@@ -11,6 +11,7 @@ class InvoiceItem {
   final String unit;
   final double price;
   final double discount;
+  final double buyPrice;
 
   InvoiceItem({
     this.id,
@@ -21,6 +22,7 @@ class InvoiceItem {
     required this.unit,
     required this.price,
     this.discount = 0,
+    this.buyPrice = 0,
   });
 
   double get subtotal => quantity * price;
@@ -36,6 +38,7 @@ class InvoiceItem {
         'unit': unit,
         'price': price,
         'discount': discount,
+        'buyPrice': buyPrice,
       };
 
   factory InvoiceItem.fromMap(Map<String, dynamic> map) => InvoiceItem(
@@ -47,6 +50,7 @@ class InvoiceItem {
         unit: map['unit'] ?? 'pcs',
         price: (map['price'] as num).toDouble(),
         discount: (map['discount'] as num?)?.toDouble() ?? 0,
+        buyPrice: (map['buyPrice'] as num?)?.toDouble() ?? 0,
       );
 
   InvoiceItem copyWith({int? invoiceId, double? quantity, double? discount}) =>
@@ -59,6 +63,7 @@ class InvoiceItem {
         unit: unit,
         price: price,
         discount: discount ?? this.discount,
+        buyPrice: buyPrice,
       );
 }
 

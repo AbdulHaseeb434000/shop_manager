@@ -1066,6 +1066,12 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
               onPressed: () {
                 final paid =
                     double.tryParse(_paidCtrl.text) ?? widget.total;
+                if (paid < 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Amount cannot be negative')),
+                  );
+                  return;
+                }
                 widget.onCheckout(_method, paid, _customer);
               },
               icon: const Icon(Icons.check_circle_rounded),

@@ -141,14 +141,15 @@ class _ReportsScreenState extends State<ReportsScreen>
 
   Widget _buildOverviewTab() {
     final revenue = _report['revenue'] as double? ?? 0;
+    final cogs = _report['cogs'] as double? ?? 0;
+    final grossProfit = _report['grossProfit'] as double? ?? 0;
     final expenses = _report['expenses'] as double? ?? 0;
     final profit = _report['profit'] as double? ?? 0;
     final invoiceCount = _report['invoiceCount'] ?? 0;
     final unpaidDue = _report['unpaidDue'] as double? ?? 0;
     final expByType =
         _report['expenseByType'] as List<Map<String, dynamic>>? ?? [];
-    final profitMargin =
-        revenue > 0 ? (profit / revenue * 100) : 0.0;
+    final netMargin = revenue > 0 ? (profit / revenue * 100) : 0.0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -175,6 +176,20 @@ class _ReportsScreenState extends State<ReportsScreen>
                 gradient: AppTheme.gradientSuccess,
               ),
               GradientStatCard(
+                title: 'COGS',
+                value: CurrencyFormat.formatCompact(cogs),
+                icon: Icons.shopping_cart_rounded,
+                gradient: AppTheme.gradientWarning,
+              ),
+              GradientStatCard(
+                title: grossProfit >= 0 ? 'Gross Profit' : 'Gross Loss',
+                value: CurrencyFormat.formatCompact(grossProfit.abs()),
+                icon: Icons.store_rounded,
+                gradient: grossProfit >= 0
+                    ? AppTheme.gradientSuccess
+                    : AppTheme.gradientRose,
+              ),
+              GradientStatCard(
                 title: 'Expenses',
                 value: CurrencyFormat.formatCompact(expenses),
                 icon: Icons.receipt_long_rounded,
@@ -183,8 +198,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               GradientStatCard(
                 title: profit >= 0 ? 'Net Profit' : 'Net Loss',
                 value: CurrencyFormat.formatCompact(profit.abs()),
-                subtitle:
-                    '${profitMargin.toStringAsFixed(1)}% margin',
+                subtitle: '${netMargin.toStringAsFixed(1)}% margin',
                 icon: profit >= 0
                     ? Icons.account_balance_rounded
                     : Icons.trending_down_rounded,
@@ -217,7 +231,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Revenue vs Expenses',
+                Text('Profit Breakdown',
                     style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 12),
@@ -228,13 +242,19 @@ class _ReportsScreenState extends State<ReportsScreen>
                     color: AppTheme.success),
                 const SizedBox(height: 8),
                 _BarCompare(
+                    label: 'COGS',
+                    value: cogs,
+                    max: revenue > 0 ? revenue : 1,
+                    color: const Color(0xFFFFB74D)),
+                const SizedBox(height: 8),
+                _BarCompare(
                     label: 'Expenses',
                     value: expenses,
                     max: revenue > 0 ? revenue : 1,
                     color: AppTheme.warning),
                 const SizedBox(height: 8),
                 _BarCompare(
-                    label: profit >= 0 ? 'Profit' : 'Loss',
+                    label: profit >= 0 ? 'Net Prof' : 'Net Loss',
                     value: profit.abs(),
                     max: revenue > 0 ? revenue : 1,
                     color: profit >= 0 ? AppTheme.primary : AppTheme.error),
@@ -243,11 +263,11 @@ class _ReportsScreenState extends State<ReportsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Profit Margin',
+                    Text('Net Margin',
                         style: GoogleFonts.poppins(
                             fontSize: 13, color: AppTheme.textSecondary)),
                     Text(
-                      '${profitMargin.toStringAsFixed(1)}%',
+                      '${netMargin.toStringAsFixed(1)}%',
                       style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

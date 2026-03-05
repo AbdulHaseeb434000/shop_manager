@@ -50,6 +50,35 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Duplicate phone check for new customers
+    if (widget.customer == null && _phoneCtrl.text.trim().isNotEmpty) {
+      final existing = await _db.getCustomers(search: _phoneCtrl.text.trim());
+      final duplicate = existing.any((c) => c.phone == _phoneCtrl.text.trim());
+      if (duplicate && mounted) {
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Duplicate Phone'),
+            content: const Text(
+                'A customer with this phone number already exists. Add anyway?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Add Anyway'),
+              ),
+            ],
+          ),
+        );
+        if (ok != true) return;
+      }
+    }
+
     final customer = Customer(
       id: widget.customer?.id,
       name: _nameCtrl.text.trim(),

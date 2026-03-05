@@ -312,18 +312,26 @@ class _ProductCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      Text(
-                        'Buy: ${CurrencyFormat.format(product.buyPrice)}',
-                        style: GoogleFonts.poppins(
-                            fontSize: 11, color: AppTheme.textSecondary),
+                      Flexible(
+                        child: Text(
+                          'Buy: ${CurrencyFormat.format(product.buyPrice)}',
+                          style: GoogleFonts.poppins(
+                              fontSize: 11, color: AppTheme.textSecondary),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Sell: ${CurrencyFormat.format(product.sellPrice)}',
-                        style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: AppTheme.success,
-                            fontWeight: FontWeight.w500),
+                      Flexible(
+                        child: Text(
+                          'Sell: ${CurrencyFormat.format(product.sellPrice)}',
+                          style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: AppTheme.success,
+                              fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
                       ),
                     ],
                   ),

@@ -98,11 +98,18 @@ class BackupManager {
       final items = invMap.remove('items') as List<dynamic>? ?? [];
       invMap.remove('id');
       final invId = await _db.insertInvoiceMap(invMap);
-      for (final item in items) {
-        final itemMap = Map<String, dynamic>.from(item as Map);
-        itemMap['invoiceId'] = invId;
-        itemMap.remove('id');
-        await _db.insertInvoiceItemMap(itemMap);
+      int actualInvId = invId;
+      if (actualInvId == 0) {
+        final existing = await _db.getInvoiceByNumber(invMap['invoiceNumber'] as String);
+        actualInvId = existing?.id ?? 0;
+      }
+      if (actualInvId > 0) {
+        for (final item in items) {
+          final itemMap = Map<String, dynamic>.from(item as Map);
+          itemMap['invoiceId'] = actualInvId;
+          itemMap.remove('id');
+          await _db.insertInvoiceItemMap(itemMap);
+        }
       }
     }
 
