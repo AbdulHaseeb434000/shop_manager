@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 1.6,
+                        childAspectRatio: 1.4,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
@@ -263,7 +263,32 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          const Divider(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Developed by: Abdul Haseeb',
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Contact: 03219610808',
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: AppTheme.textSecondary),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
