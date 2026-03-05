@@ -310,30 +310,21 @@ class _ProductCard extends StatelessWidget {
                           fontSize: 14,
                           color: AppTheme.textPrimary)),
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Buy: ${CurrencyFormat.format(product.buyPrice)}',
-                          style: GoogleFonts.poppins(
-                              fontSize: 11, color: AppTheme.textSecondary),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          'Sell: ${CurrencyFormat.format(product.sellPrice)}',
-                          style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: AppTheme.success,
-                              fontWeight: FontWeight.w500),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Buy: ${CurrencyFormat.format(product.buyPrice)}',
+                    style: GoogleFonts.poppins(
+                        fontSize: 11, color: AppTheme.textSecondary),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    'Sell: ${CurrencyFormat.format(product.sellPrice)}',
+                    style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppTheme.success,
+                        fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ],
               ),
