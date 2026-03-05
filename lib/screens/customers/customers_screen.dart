@@ -287,7 +287,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     onPressed: () {
                       Navigator.pop(context);
                       Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => const InvoicesScreen()));
+                          MaterialPageRoute(builder: (_) => InvoicesScreen(
+                            customerId: c.id,
+                            customerName: c.name,
+                          )));
                     },
                     icon: const Icon(Icons.receipt_rounded),
                     label: const Text('Invoices'),

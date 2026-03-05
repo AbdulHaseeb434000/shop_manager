@@ -443,7 +443,7 @@ class _ProductListTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  '${CurrencyFormat.format(product.sellPrice)}  •  ${product.quantity} ${product.unit} left',
+                  '${CurrencyFormat.format(product.sellPrice)}  •  ${(product.quantity - quantity).toInt()} ${product.unit} left',
                   style: GoogleFonts.poppins(
                       fontSize: 11, color: AppTheme.textSecondary),
                 ),
@@ -909,7 +909,14 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
               };
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() => _method = m),
+                  onTap: () => setState(() {
+                    _method = m;
+                    if (m == PaymentMethod.credit) {
+                      _paidCtrl.text = '0.00';
+                    } else {
+                      _paidCtrl.text = widget.total.toStringAsFixed(2);
+                    }
+                  }),
                   child: Container(
                     margin: const EdgeInsets.only(right: 6),
                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -948,11 +955,16 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
           TextFormField(
             controller: _paidCtrl,
             keyboardType: TextInputType.number,
+            enabled: _method != PaymentMethod.credit,
             style: GoogleFonts.poppins(
                 fontSize: 18, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
-              labelText: 'Amount Received',
-              prefixText: '${CurrencyFormat.symbol} ',
+              labelText: _method == PaymentMethod.credit
+                  ? 'Credit Sale (no payment now)'
+                  : 'Amount Received',
+              prefixText: _method != PaymentMethod.credit
+                  ? '${CurrencyFormat.symbol} '
+                  : null,
               prefixStyle: GoogleFonts.poppins(fontSize: 16),
             ),
           ),

@@ -8,7 +8,10 @@ import '../../widgets/gradient_card.dart';
 import 'invoice_detail_screen.dart';
 
 class InvoicesScreen extends StatefulWidget {
-  const InvoicesScreen({super.key});
+  final int? customerId;
+  final String? customerName;
+
+  const InvoicesScreen({super.key, this.customerId, this.customerName});
 
   @override
   State<InvoicesScreen> createState() => _InvoicesScreenState();
@@ -41,6 +44,7 @@ class _InvoicesScreenState extends State<InvoicesScreen>
     final status = _tabs[_tabCtrl.index];
     final invoices = await _db.getInvoices(
         status: status,
+        customerId: widget.customerId,
         search: _search.isEmpty ? null : _search);
     if (mounted) setState(() {
       _invoices = invoices;
@@ -53,7 +57,9 @@ class _InvoicesScreenState extends State<InvoicesScreen>
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
-        title: const Text('Invoices'),
+        title: Text(widget.customerName != null
+            ? '${widget.customerName}\'s Invoices'
+            : 'Invoices'),
         bottom: TabBar(
           controller: _tabCtrl,
           labelStyle: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),

@@ -95,18 +95,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(greeting,
                           style: GoogleFonts.poppins(
                               color: Colors.white70, fontSize: 13)),
-                      Text(_shopName,
-                          style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
                 titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                 title: Text(_shopName,
                     style: GoogleFonts.poppins(
-                        color: AppTheme.textPrimary,
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold)),
               ),
@@ -128,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 1.4,
+                        childAspectRatio: 1.3,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [

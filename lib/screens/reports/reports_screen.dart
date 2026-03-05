@@ -149,12 +149,16 @@ class _ReportsScreenState extends State<ReportsScreen>
                     Text('Total Sales ($_period days)',
                         style: GoogleFonts.poppins(
                             color: Colors.white70, fontSize: 12)),
-                    Text(
-                      CurrencyFormat.format(_totalForPeriod),
-                      style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        CurrencyFormat.format(_totalForPeriod),
+                        style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -500,11 +504,15 @@ class _SummaryCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                     color: AppTheme.textPrimary, fontSize: 14)),
           ),
-          Text(value,
-              style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: color)),
+          Flexible(
+            child: Text(value,
+                style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: color),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
     );
