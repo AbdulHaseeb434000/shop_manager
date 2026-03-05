@@ -69,7 +69,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
       ),
     );
     if (result == null || result <= 0) return;
-    final newPaid = (_invoice.paidAmount + result).clamp(0, _invoice.totalAmount);
+    final newPaid = (_invoice.paidAmount + result).clamp(0.0, _invoice.totalAmount);
     final newStatus = newPaid >= _invoice.totalAmount
         ? InvoiceStatus.paid
         : InvoiceStatus.partial;

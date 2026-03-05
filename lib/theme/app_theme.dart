@@ -43,7 +43,6 @@ class AppTheme {
         seedColor: primary,
         primary: primary,
         secondary: secondary,
-        background: bgLight,
         surface: bgCard,
         error: error,
       ),

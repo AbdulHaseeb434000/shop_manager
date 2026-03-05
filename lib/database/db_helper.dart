@@ -507,7 +507,6 @@ class DBHelper {
     final db = await database;
     await db.insert('utility_bills', map, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
-}
 
   Future<Map<String, dynamic>> getBusinessReport(int days) async {
     final db = await database;
@@ -539,3 +538,4 @@ class DBHelper {
       'expenseByType': expenseByType,
     };
   }
+}

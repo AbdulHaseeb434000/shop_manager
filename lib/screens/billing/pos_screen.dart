@@ -64,7 +64,7 @@ class _POSScreenState extends State<POSScreen> {
 
   double get _subtotal => _cartItems.fold(0, (sum, item) => sum + item.total);
   double get _discountAmount => _useFixedDiscount
-      ? _discountFixed.clamp(0, _subtotal)
+      ? _discountFixed.clamp(0.0, _subtotal)
       : _subtotal * _discountPercent / 100;
   double get _taxAmount => (_subtotal - _discountAmount) * _taxPercent / 100;
   double get _total => _subtotal - _discountAmount + _taxAmount;
