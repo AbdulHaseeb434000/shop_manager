@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../database/db_helper.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/currency_format.dart';
+import '../../utils/backup_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -55,6 +56,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _shopPhoneCtrl.dispose();
     _taxCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportData() async {
+    try {
+      await BackupManager.exportData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Export failed: $e'),
+              backgroundColor: AppTheme.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _importData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Restore Data'),
+        content: const Text(
+            'This will ADD data from the backup file to your existing data. Select your backup JSON file to continue.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Continue')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      final summary = await BackupManager.importData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(summary),
+              backgroundColor: AppTheme.success,
+              duration: const Duration(seconds: 4)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Restore failed: $e'),
+              backgroundColor: AppTheme.error),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -220,7 +277,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  // Backup & Restore
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bgCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.divider),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.backup_rounded,
+                                color: AppTheme.primary),
+                            const SizedBox(width: 8),
+                            Text('Backup & Restore',
+                                style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primary)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Export your data as a JSON file. Save it to Google Drive, WhatsApp, or email to keep a backup.',
+                          style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _importData,
+                                icon: const Icon(Icons.restore_rounded),
+                                label: Text('Restore',
+                                    style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w600)),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _exportData,
+                                icon: const Icon(Icons.upload_rounded),
+                                label: Text('Export',
+                                    style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w600)),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: _save,
                     icon: const Icon(Icons.save_rounded),

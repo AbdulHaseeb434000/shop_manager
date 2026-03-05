@@ -482,3 +482,30 @@ class DBHelper {
     await db.delete('utility_bills', where: 'id = ?', whereArgs: [id]);
   }
 }
+
+  // Raw map inserts used by BackupManager restore
+  Future<void> insertProductMap(Map<String, dynamic> map) async {
+    final db = await database;
+    await db.insert('products', map, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<void> insertCustomerMap(Map<String, dynamic> map) async {
+    final db = await database;
+    await db.insert('customers', map, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<int> insertInvoiceMap(Map<String, dynamic> map) async {
+    final db = await database;
+    return await db.insert('invoices', map, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<void> insertInvoiceItemMap(Map<String, dynamic> map) async {
+    final db = await database;
+    await db.insert('invoice_items', map, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  Future<void> insertUtilityBillMap(Map<String, dynamic> map) async {
+    final db = await database;
+    await db.insert('utility_bills', map, conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+}
