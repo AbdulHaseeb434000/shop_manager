@@ -109,7 +109,7 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
-        title: const Text('Utility Bills'),
+        title: const Text('Expenses'),
         bottom: TabBar(
           controller: _tabCtrl,
           labelStyle: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600),
@@ -159,10 +159,10 @@ class _UtilityBillsScreenState extends State<UtilityBillsScreen>
                 ? const Center(child: CircularProgressIndicator())
                 : _bills.isEmpty
                     ? EmptyState(
-                        title: 'No Bills',
-                        message: 'Track your utility bills here',
+                        title: 'No Expenses',
+                        message: 'Track your business expenses here',
                         icon: Icons.receipt_long_outlined,
-                        actionLabel: 'Add Bill',
+                        actionLabel: 'Add Expense',
                         onAction: () async {
                           await Navigator.push(
                               context,

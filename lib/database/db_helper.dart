@@ -508,3 +508,34 @@ class DBHelper {
     await db.insert('utility_bills', map, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 }
+
+  Future<Map<String, dynamic>> getBusinessReport(int days) async {
+    final db = await database;
+    final from = DateTime.now().subtract(Duration(days: days)).toIso8601String();
+
+    final revenue = await db.rawQuery(
+        'SELECT COALESCE(SUM(totalAmount),0) as total FROM invoices WHERE createdAt >= ?',
+        [from]);
+    final expenses = await db.rawQuery(
+        'SELECT COALESCE(SUM(amount),0) as total FROM utility_bills WHERE status = ? AND paidDate >= ?',
+        ['paid', from]);
+    final invoiceCount = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM invoices WHERE createdAt >= ?', [from]);
+    final unpaid = await db.rawQuery(
+        'SELECT COALESCE(SUM(totalAmount - paidAmount),0) as total FROM invoices WHERE status != ? AND createdAt >= ?',
+        ['paid', from]);
+    final expenseByType = await db.rawQuery(
+        'SELECT type, COALESCE(SUM(amount),0) as total FROM utility_bills WHERE status = ? AND paidDate >= ? GROUP BY type ORDER BY total DESC',
+        ['paid', from]);
+
+    final rev = (revenue.first['total'] as num).toDouble();
+    final exp = (expenses.first['total'] as num).toDouble();
+    return {
+      'revenue': rev,
+      'expenses': exp,
+      'profit': rev - exp,
+      'invoiceCount': invoiceCount.first['cnt'],
+      'unpaidDue': (unpaid.first['total'] as num).toDouble(),
+      'expenseByType': expenseByType,
+    };
+  }

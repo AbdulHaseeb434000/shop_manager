@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: 140,
+              expandedHeight: 170,
               floating: false,
               pinned: true,
               backgroundColor: AppTheme.bgCard,
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 72, 20, 56),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppTheme.textSecondary),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 80),
                         ],
                       ),
                     ),

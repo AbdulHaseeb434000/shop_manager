@@ -22,6 +22,8 @@ class _POSScreenState extends State<POSScreen> {
   final List<InvoiceItem> _cartItems = [];
   String _productSearch = '';
   double _discountPercent = 0;
+  double _discountFixed = 0;
+  bool _useFixedDiscount = false;
   double _taxPercent = 0;
   bool _loading = true;
   final _searchController = TextEditingController();
@@ -61,7 +63,9 @@ class _POSScreenState extends State<POSScreen> {
   }
 
   double get _subtotal => _cartItems.fold(0, (sum, item) => sum + item.total);
-  double get _discountAmount => _subtotal * _discountPercent / 100;
+  double get _discountAmount => _useFixedDiscount
+      ? _discountFixed.clamp(0, _subtotal)
+      : _subtotal * _discountPercent / 100;
   double get _taxAmount => (_subtotal - _discountAmount) * _taxPercent / 100;
   double get _total => _subtotal - _discountAmount + _taxAmount;
 
@@ -180,6 +184,8 @@ class _POSScreenState extends State<POSScreen> {
         builder: (ctx, setSheetState) => _BillSheet(
           cartItems: _cartItems,
           discountPercent: _discountPercent,
+          discountFixed: _discountFixed,
+          useFixedDiscount: _useFixedDiscount,
           subtotal: _subtotal,
           discountAmount: _discountAmount,
           taxPercent: _taxPercent,
@@ -189,8 +195,20 @@ class _POSScreenState extends State<POSScreen> {
             _updateQuantity(i, q);
             setSheetState(() {});
           },
-          onDiscountChange: (v) {
+          onDiscountPercentChange: (v) {
             setState(() => _discountPercent = v);
+            setSheetState(() {});
+          },
+          onDiscountFixedChange: (v) {
+            setState(() => _discountFixed = v);
+            setSheetState(() {});
+          },
+          onDiscountModeToggle: (fixed) {
+            setState(() {
+              _useFixedDiscount = fixed;
+              _discountPercent = 0;
+              _discountFixed = 0;
+            });
             setSheetState(() {});
           },
           onCheckout: () {
@@ -529,25 +547,33 @@ class _ProductListTile extends StatelessWidget {
 class _BillSheet extends StatelessWidget {
   final List<InvoiceItem> cartItems;
   final double discountPercent;
+  final double discountFixed;
+  final bool useFixedDiscount;
   final double subtotal;
   final double discountAmount;
   final double taxPercent;
   final double taxAmount;
   final double total;
   final Function(int, double) onQuantityChange;
-  final Function(double) onDiscountChange;
+  final Function(double) onDiscountPercentChange;
+  final Function(double) onDiscountFixedChange;
+  final Function(bool) onDiscountModeToggle;
   final VoidCallback onCheckout;
 
   const _BillSheet({
     required this.cartItems,
     required this.discountPercent,
+    required this.discountFixed,
+    required this.useFixedDiscount,
     required this.subtotal,
     required this.discountAmount,
     required this.taxPercent,
     required this.taxAmount,
     required this.total,
     required this.onQuantityChange,
-    required this.onDiscountChange,
+    required this.onDiscountPercentChange,
+    required this.onDiscountFixedChange,
+    required this.onDiscountModeToggle,
     required this.onCheckout,
   });
 
@@ -622,30 +648,95 @@ class _BillSheet extends StatelessWidget {
                   _TotalRow('Total', CurrencyFormat.format(total),
                       bold: true, color: AppTheme.primary),
                   const SizedBox(height: 8),
+                  // Discount mode toggle
                   Row(
                     children: [
-                      Text('Disc:',
+                      Text('Discount:',
                           style: GoogleFonts.poppins(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: AppTheme.textSecondary)),
-                      Expanded(
-                        child: Slider(
-                          value: discountPercent,
-                          min: 0,
-                          max: 50,
-                          divisions: 50,
-                          label: '${discountPercent.toInt()}%',
-                          onChanged: onDiscountChange,
-                          activeColor: AppTheme.primary,
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => onDiscountModeToggle(false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: !useFixedDiscount
+                                ? AppTheme.primary
+                                : AppTheme.bgLight,
+                            borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(8)),
+                            border: Border.all(color: AppTheme.primary),
+                          ),
+                          child: Text('%',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: !useFixedDiscount
+                                      ? Colors.white
+                                      : AppTheme.primary)),
                         ),
                       ),
-                      Text('${discountPercent.toInt()}%',
-                          style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primary)),
+                      GestureDetector(
+                        onTap: () => onDiscountModeToggle(true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: useFixedDiscount
+                                ? AppTheme.primary
+                                : AppTheme.bgLight,
+                            borderRadius: const BorderRadius.horizontal(
+                                right: Radius.circular(8)),
+                            border: Border.all(color: AppTheme.primary),
+                          ),
+                          child: Text('Amt',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: useFixedDiscount
+                                      ? Colors.white
+                                      : AppTheme.primary)),
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  if (!useFixedDiscount)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Slider(
+                            value: discountPercent,
+                            min: 0,
+                            max: 50,
+                            divisions: 50,
+                            label: '${discountPercent.toInt()}%',
+                            onChanged: onDiscountPercentChange,
+                            activeColor: AppTheme.primary,
+                          ),
+                        ),
+                        Text('${discountPercent.toInt()}%',
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primary)),
+                      ],
+                    )
+                  else
+                    TextField(
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Enter discount amount',
+                        prefixText: '${CurrencyFormat.symbol} ',
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                      ),
+                      onChanged: (v) =>
+                          onDiscountFixedChange(double.tryParse(v) ?? 0),
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,

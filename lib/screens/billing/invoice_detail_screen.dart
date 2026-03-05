@@ -20,11 +20,62 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
   final _db = DBHelper();
   Map<String, String> _settings = {};
   bool _generating = false;
+  late Invoice _invoice;
 
   @override
   void initState() {
     super.initState();
+    _invoice = widget.invoice;
     _loadSettings();
+  }
+
+  Future<void> _recordPayment() async {
+    final due = _invoice.dueAmount;
+    final ctrl = TextEditingController(text: due.toStringAsFixed(2));
+    final result = await showDialog<double?>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Record Payment'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Due: ${CurrencyFormat.format(due)}',
+                style: GoogleFonts.poppins(
+                    color: AppTheme.error, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Amount Received',
+                prefixText: '${CurrencyFormat.symbol} ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () {
+                final v = double.tryParse(ctrl.text);
+                Navigator.pop(ctx, v);
+              },
+              child: const Text('Confirm')),
+        ],
+      ),
+    );
+    if (result == null || result <= 0) return;
+    final newPaid = (_invoice.paidAmount + result).clamp(0, _invoice.totalAmount);
+    final newStatus = newPaid >= _invoice.totalAmount
+        ? InvoiceStatus.paid
+        : InvoiceStatus.partial;
+    await _db.updateInvoiceStatus(_invoice.id!, newStatus, newPaid);
+    final updated = await _db.getInvoiceById(_invoice.id!);
+    if (mounted && updated != null) setState(() => _invoice = updated);
   }
 
   Future<void> _loadSettings() async {
@@ -85,7 +136,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final inv = widget.invoice;
+    final inv = _invoice;
     return Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
@@ -320,6 +371,28 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
 
             const SizedBox(height: 20),
 
+            // Record Payment button for unpaid/partial invoices
+            if (inv.status != InvoiceStatus.paid) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _recordPayment,
+                  icon: const Icon(Icons.payments_rounded),
+                  label: Text(
+                    inv.status == InvoiceStatus.unpaid
+                        ? 'Record Payment  (Due: ${CurrencyFormat.format(inv.dueAmount)})'
+                        : 'Record More Payment  (Due: ${CurrencyFormat.format(inv.dueAmount)})',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppTheme.success,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
             // Action buttons
             Row(
               children: [

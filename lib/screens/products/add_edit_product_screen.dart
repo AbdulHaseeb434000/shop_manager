@@ -115,7 +115,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               const SizedBox(height: 12),
               _field('Description (optional)', _descCtrl, maxLines: 2),
               const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
+              DropdownButtonFormField<int?>(
+                key: ValueKey(_categories.length),
                 value: _categoryId,
                 decoration:
                     const InputDecoration(labelText: 'Category (optional)'),
