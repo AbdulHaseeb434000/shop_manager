@@ -911,18 +911,169 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
   PaymentMethod _method = PaymentMethod.cash;
   late TextEditingController _paidCtrl;
   Customer? _customer;
+  late List<Customer> _localCustomers;
+  final _db = DBHelper();
 
   @override
   void initState() {
     super.initState();
     _paidCtrl =
         TextEditingController(text: widget.total.toStringAsFixed(2));
+    _localCustomers = List.from(widget.customers);
   }
 
   @override
   void dispose() {
     _paidCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _showAddCustomerDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    final creditLimitCtrl = TextEditingController(text: '0');
+
+    final customer = await showDialog<Customer?>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: Text('Add New Customer',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name *',
+                    prefixIcon: Icon(Icons.person_rounded),
+                  ),
+                  validator: (v) =>
+                      v!.trim().isEmpty ? 'Name is required' : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: phoneCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    prefixIcon: Icon(Icons.phone_rounded),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: emailCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_rounded),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: addressCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on_rounded),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: notesCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    prefixIcon: Icon(Icons.notes_rounded),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: creditLimitCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14),
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Credit Limit',
+                    prefixIcon: Icon(Icons.credit_card_rounded),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: GoogleFonts.poppins()),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final newCustomer = Customer(
+                name: nameCtrl.text.trim(),
+                phone: phoneCtrl.text.trim().isEmpty
+                    ? null
+                    : phoneCtrl.text.trim(),
+                email: emailCtrl.text.trim().isEmpty
+                    ? null
+                    : emailCtrl.text.trim(),
+                address: addressCtrl.text.trim().isEmpty
+                    ? null
+                    : addressCtrl.text.trim(),
+                notes: notesCtrl.text.trim().isEmpty
+                    ? null
+                    : notesCtrl.text.trim(),
+                creditLimit:
+                    double.tryParse(creditLimitCtrl.text) ?? 0,
+                totalPurchases: 0,
+                balance: 0,
+              );
+              final id = await _db.insertCustomer(newCustomer);
+              final saved = Customer(
+                id: id,
+                name: newCustomer.name,
+                phone: newCustomer.phone,
+                email: newCustomer.email,
+                address: newCustomer.address,
+                notes: newCustomer.notes,
+                creditLimit: newCustomer.creditLimit,
+                totalPurchases: 0,
+                balance: 0,
+              );
+              if (ctx.mounted) Navigator.pop(ctx, saved);
+            },
+            child: Text('Add Customer', style: GoogleFonts.poppins()),
+          ),
+        ],
+      ),
+    );
+
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
+    emailCtrl.dispose();
+    addressCtrl.dispose();
+    notesCtrl.dispose();
+    creditLimitCtrl.dispose();
+
+    if (customer != null && mounted) {
+      setState(() {
+        _localCustomers.add(customer);
+        _customer = customer;
+      });
+    }
   }
 
   @override
@@ -959,23 +1110,42 @@ class _CheckoutSheetState extends State<_CheckoutSheet> {
                   fontSize: 18,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
-          DropdownButtonFormField<Customer?>(
-            value: _customer,
-            decoration: const InputDecoration(
-                labelText: 'Customer',
-                prefixIcon: Icon(Icons.person_rounded)),
-            items: [
-              const DropdownMenuItem(
-                  value: null, child: Text('Walk-in Customer')),
-              ...widget.customers.map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(
-                        '${c.name}${c.phone != null ? " (${c.phone})" : ""}'),
-                  )),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<Customer?>(
+                  value: _customer,
+                  decoration: const InputDecoration(
+                      labelText: 'Customer',
+                      prefixIcon: Icon(Icons.person_rounded)),
+                  items: [
+                    const DropdownMenuItem(
+                        value: null, child: Text('Walk-in Customer')),
+                    ..._localCustomers.map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(
+                              '${c.name}${c.phone != null ? " (${c.phone})" : ""}'),
+                        )),
+                  ],
+                  onChanged: (v) => setState(() => _customer = v),
+                  style: GoogleFonts.poppins(
+                      color: AppTheme.textPrimary, fontSize: 14),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Tooltip(
+                message: 'Add New Customer',
+                child: IconButton(
+                  onPressed: _showAddCustomerDialog,
+                  icon: const Icon(Icons.person_add_rounded),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppTheme.primary.withOpacity(0.1),
+                    foregroundColor: AppTheme.primary,
+                  ),
+                ),
+              ),
             ],
-            onChanged: (v) => setState(() => _customer = v),
-            style: GoogleFonts.poppins(
-                color: AppTheme.textPrimary, fontSize: 14),
           ),
           const SizedBox(height: 12),
           Text('Payment Method',
