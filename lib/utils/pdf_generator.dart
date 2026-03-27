@@ -25,12 +25,17 @@ class PdfGenerator {
     final dividerColor = PdfColor.fromHex('#EEEEF5');
 
     pdf.addPage(
-      pw.Page(
+      pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(30),
-        build: (context) => pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
+        footer: (context) => pw.Center(
+          child: pw.Text('Thank you for your business!',
+              style: pw.TextStyle(
+                  color: primaryColor,
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold)),
+        ),
+        build: (context) => [
             // Header
             pw.Container(
               padding: const pw.EdgeInsets.all(20),
@@ -363,19 +368,7 @@ class PdfGenerator {
                 ),
               ),
             ],
-
-            pw.Spacer(),
-
-            // Footer
-            pw.Center(
-              child: pw.Text('Thank you for your business!',
-                  style: pw.TextStyle(
-                      color: primaryColor,
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold)),
-            ),
           ],
-        ),
       ),
     );
 
